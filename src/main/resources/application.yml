@@ -1,25 +1,41 @@
+# ============================================
+# Spring Batch - Configuration PostgreSQL
+# ============================================
+
 spring:
+  application:
+    name: spring-batch-transactions
+
+  # ── Datasource PostgreSQL ──────────────────
   datasource:
     url: jdbc:postgresql://localhost:5432/jc-batch
     username: postgres
     password: "Lys-Nayanka2019&"
     driver-class-name: org.postgresql.Driver
-
     hikari:
+      maximum-pool-size: 10
       minimum-idle: 5
-      maximum-pool-size: 20
-      idle-timeout: 30000
-      max-lifetime: 1800000
-      connection-timeout: 30000
 
+  # ── JPA / Hibernate ────────────────────────
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+        format_sql: true
 
-  sql:
-    init:
-      mode: never
+  # ── Spring Batch ───────────────────────────
+  batch:
+    job:
+      enabled: true
+    jdbc:
+      initialize-schema: always   # Crée les tables BATCH_* au démarrage
+      platform: postgresql
+
+# ── Paramètres métier du batch ───────────────
+batch:
+  input-file: classpath:data/transactions.csv
+  chunk-size: 10
+  skip-limit: 5
