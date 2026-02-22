@@ -29,7 +29,7 @@ spring:
   # ── Spring Batch ───────────────────────────
   batch:
     job:
-      enabled: true
+      enabled: false              # Le scheduler ou l'API REST gère le lancement
     jdbc:
       initialize-schema: always   # Crée les tables BATCH_* au démarrage
       platform: postgresql
@@ -39,3 +39,15 @@ batch:
   input-file: classpath:data/transactions.csv
   chunk-size: 10
   skip-limit: 5
+
+  # Partitioning
+  partitioning:
+    grid-size: 4                  # Nombre de partitions (= threads parallèles)
+    pool-size: 4                  # Taille du pool de threads
+
+  # Scheduler
+  scheduler:
+    enabled: true                 # Activer/désactiver le scheduling
+    cron: "0 0 2 * * *"          # Tous les jours à 2h du matin
+    # cron: "0 */5 * * * *"      # Toutes les 5 minutes (pour tester)
+    # cron: "0 0 2 * * MON-FRI"  # Jours ouvrés uniquement
