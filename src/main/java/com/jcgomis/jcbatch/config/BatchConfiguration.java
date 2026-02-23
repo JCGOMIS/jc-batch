@@ -122,7 +122,9 @@ public class BatchConfiguration {
      */
     @Bean
     @StepScope
-    public FlatFileItemReader<TransactionCsvDto> partitionedReader(int linesToSkip, int maxItemCount){
+    public FlatFileItemReader<TransactionCsvDto> partitionedReader(
+            @Value("#{stepExecutionContext['linesToSkip']}") int linesToSkip,
+            @Value("#{stepExecutionContext['maxItemCount']}")int maxItemCount){
         return new FlatFileItemReaderBuilder<TransactionCsvDto>()
                 .name("partitionedTransactionReader")
                 .resource(inputFile)

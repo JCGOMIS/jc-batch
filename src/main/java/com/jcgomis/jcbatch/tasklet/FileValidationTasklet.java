@@ -10,6 +10,7 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -23,59 +24,33 @@ public class FileValidationTasklet implements Tasklet {
     @Value("${batch.input-file:classpath:data/transactions.csv}")
     private Resource inputFile;
 
-    @Override
-    public @Nullable RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        log.info("Validation du fichier d'entrée...");
+    private final JdbcTemplate jdbcTemplate;  // ← ajouter l'injection
 
-        // 1. Vérifier l'existence du fichier
+    @Override
+    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+
+        // 1. Nettoyage de la table avant import
+        jdbcTemplate.execute("TRUNCATE TABLE transactions");
+        log.info("Table transactions vidée avant import");
+
+        // 2. Validation du fichier (ton code existant)
         if (!inputFile.exists()) {
-            log.error("Le fichier d'entrée n'existe pas : {}", inputFile);
+            log.error("Fichier CSV introuvable : {}", inputFile);
             contribution.setExitStatus(ExitStatus.FAILED);
             return RepeatStatus.FINISHED;
         }
 
-        // 2. Vérifier que le fichier est lisible et non vide
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(inputFile.getInputStream()))) {
-
-            String header = reader.readLine();
-            if (header == null || header.isBlank()) {
-                log.error("Le fichier est vide (pas d'en-tête)");
+            long count = reader.lines().count() - 1;
+            if (count <= 0) {
+                log.error("Le fichier CSV est vide");
                 contribution.setExitStatus(ExitStatus.FAILED);
                 return RepeatStatus.FINISHED;
             }
-
-            // 3. Vérifier qu'il y a au moins une ligne de données
-            String firstDataLine = reader.readLine();
-            if (firstDataLine == null || firstDataLine.isBlank()) {
-                log.error("Le fichier ne contient aucune donnée (en-tête uniquement)");
-                contribution.setExitStatus(ExitStatus.FAILED);
-                return RepeatStatus.FINISHED;
-            }
-
-            // Compter le nombre total de lignes pour le log
-            long lineCount = 2; // header + première ligne déjà lues
-            while (reader.readLine() != null) {
-                lineCount++;
-            }
-
-            log.info("Fichier valide : {} lignes détectées ({} lignes de données)",
-                    lineCount, lineCount - 1);
-
-            // Stocker le nombre de lignes dans le contexte (accessible par les steps suivants)
-            chunkContext.getStepContext()
-                    .getStepExecution()
-                    .getJobExecution()
-                    .getExecutionContext()
-                    .putLong("totalLines", lineCount - 1);
-
-        } catch (Exception e) {
-            log.error("Erreur lors de la lecture du fichier : {}", e.getMessage());
-            contribution.setExitStatus(ExitStatus.FAILED);
-            return RepeatStatus.FINISHED;
+            log.info("Fichier validé : {} lignes de données", count);
         }
 
-        contribution.setExitStatus(ExitStatus.COMPLETED);
         return RepeatStatus.FINISHED;
     }
 }

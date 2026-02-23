@@ -58,7 +58,7 @@ public class RangePartitioner implements Partitioner {
             // Nombre de lignes à sauter (en-tête + lignes des partitions précédentes)
             context.putInt("startLine", startLine);
             context.putInt("endLine", endLine);
-            context.putInt("linesToSkip", startLine); // en-tête (1) + lignes précédentes
+            context.putInt("linesToSkip",  1 + ( i * linesPerPartition)); // en-tête (1) + lignes précédentes
             context.putInt("maxItemCount", endLine - startLine + 1);
             context.putString("partitionName", "partition-" + i);
 
