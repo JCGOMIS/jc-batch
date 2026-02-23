@@ -4,7 +4,7 @@
 
 spring:
   datasource:
-    url: jdbc:h2:mem:batchdb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:batchdb;DB_CLOSE_DELAY=-1;LOCK_MODE=1;MODE=PostgreSQL
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -17,10 +17,17 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
 
   batch:
+    job:
+      enabled: false
     jdbc:
       initialize-schema: always
 
 batch:
   input-file: classpath:data/transactions.csv
-  chunk-size: 10
+  chunk-size: 5
   skip-limit: 5
+  partitioning:
+    grid-size: 1     # Mono-thread en test (H2 ne supporte pas bien la concurrence)
+    pool-size: 1
+  scheduler:
+    enabled: false
